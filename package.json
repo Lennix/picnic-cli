@@ -1,0 +1,19 @@
+{
+  "name": "picnic-cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "picnic": "./src/cli.ts"
+  },
+  "scripts": {
+    "start": "bun run src/cli.ts",
+    "link": "bun link"
+  },
+  "dependencies": {
+    "picnic-api": "^4.3.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.0"
+  }
+}
