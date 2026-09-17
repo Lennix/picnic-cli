@@ -1,4 +1,5 @@
 import type { Cart, DeliverySlot, OrderArticle, OrderLine } from "picnic-api/lib/domains/cart/types";
+import type { PriceDecorator, PromoDecorator } from "picnic-api/lib/types/common";
 
 // The wrapper's OrderArticle type omits `deposit`, but the API returns it
 // per article (in cents). Roll it up locally.
@@ -21,6 +22,17 @@ function fmtSlotWindow(slot: DeliverySlot): string {
   return `${day} ${t(start)}–${t(end)}`;
 }
 
+// Discounted lines (e.g. the Picnic Family 10% fruit & veg discount) carry
+// line-level decorators: PROMO holds the API-provided label, PRICE the
+// discounted line total, while display_price stays at the undiscounted total.
+function linePriceDec(line: OrderLine): PriceDecorator | undefined {
+  return (line.decorators ?? []).find((d): d is PriceDecorator => d.type === "PRICE");
+}
+
+function linePromoDec(line: OrderLine): PromoDecorator | undefined {
+  return (line.decorators ?? []).find((d): d is PromoDecorator => d.type === "PROMO");
+}
+
 function lineSummary(line: OrderLine): string {
   const qty = line.items.length;
   const first = line.items[0];
@@ -28,10 +40,14 @@ function lineSummary(line: OrderLine): string {
   const id = first.id;
   const name = first.name;
   const unit = first.unit_quantity;
-  const linePrice = fmtPrice(line.display_price);
+  const effective = linePriceDec(line)?.display_price ?? line.display_price;
+  const linePrice = fmtPrice(effective);
   const dep = lineDeposit(line);
   const depStr = dep ? ` (+${fmtPrice(dep)} dep)` : "";
-  return `${qty}× ${id.padEnd(10)} ${name} (${unit}) ${linePrice}${depStr}`;
+  const saving = line.display_price - effective;
+  const promo = linePromoDec(line)?.text;
+  const promoStr = saving > 0 ? ` (-${fmtPrice(saving)}${promo ? ` ${promo}` : ""})` : "";
+  return `${qty}× ${id.padEnd(10)} ${name} (${unit}) ${linePrice}${depStr}${promoStr}`;
 }
 
 export function formatCart(cart: Cart): string {
@@ -51,6 +67,9 @@ export function formatCart(cart: Cart): string {
   const summary: string[] = [`Total: ${fmtPrice(grandTotal)}`];
   if (deposit) summary.push(`(incl ${fmtPrice(deposit)} dep)`);
   if (cart.total_savings) summary.push(`Savings: ${fmtPrice(cart.total_savings)}`);
+  // Picnic Family (e.g. 10% off fruit & veg) is reported by the API as a
+  // cart-level total in membership_savings; per-line promo labels mark it.
+  if (cart.membership_savings) summary.push(`Family: ${fmtPrice(cart.membership_savings)}`);
   summary.push(`Items: ${cart.total_count}`);
   lines.push(summary.join("   "));
 
