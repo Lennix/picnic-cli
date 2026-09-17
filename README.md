@@ -12,7 +12,7 @@ API; endpoints can change without notice and accounts can be rate-limited if abu
 - Log in with email + password, including SMS 2FA
 - Persist the session token locally so subsequent commands skip auth
 - Search the catalog, fetch product details, fetch product images
-- Inspect, modify, and clear the shopping cart
+- Inspect, modify, and clear the shopping cart (incl. Picnic Family discount display)
 - List delivery slots, list past/current deliveries, fetch a single delivery
 - DE and NL accounts (default: DE)
 - Pipe-friendly TSV output for `search` and `deliveries`; `--json` mode for `cart`
@@ -64,10 +64,15 @@ Sample `picnic cart` output:
 
 ```
 1× s1177402   Malz EINWEG (500ml) €1.29 (+€0.25 dep)
+1× s1019260   Bio Karotte-Vollkorn geschnitten (500g) €4.04 (-€0.45 10% Rabatt)
 ────────────────────────────────────────────────────────────
-Total: €1.54   (incl €0.25 dep)   Items: 1
+Total: €5.58   (incl €0.25 dep)   Family: €0.45   Items: 2
 Slot:  Di. 28.04. 19:00–20:50  MOV €45.00
 ```
+
+Discounted lines (e.g. the Picnic Family 10% fruit & veg discount) show the
+discounted price plus the API-provided promo label; the cart-level `Family:`
+total comes from the API's `membership_savings` field.
 
 ## Auth & state
 
